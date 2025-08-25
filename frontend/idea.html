@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Idea Details</title>
+  <link rel="stylesheet" href="theme.css">
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <h1><a href="index.html">Idea Manager</a></h1>
+    <nav class="navbar">
+      <ul>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li>
+          <div class="user-info">
+            <span id="logged-user"></span>
+            <button id="logout-btn">Logout</button>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Idea Details -->
+  <div class="form-container">
+    <h2>Idea Details</h2>
+    <div id="idea-details"></div>
+    <div class="idea-actions">
+      <button id="edit-btn">✏️ Edit</button>
+      <button id="save-btn" style="display:none;">💾 Save</button>
+      <button id="delete-btn" style="background-color:#c0392b;color:#fff;">🗑️ Delete</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>Idea Manager v1.0.0</p>
+  </div>
+
+  <script>
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("username");
+    if (user && token) {
+        document.getElementById("logged-user").textContent = "👤 " + user;
+    } else {
+        alert("Please login first");
+        window.location.href = "index.html";
+    }
+
+    // Get ID from query params
+    const params = new URLSearchParams(window.location.search);
+    const ideaId = params.get("id");
+
+    const detailsDiv = document.getElementById("idea-details");
+    let ideaData = null;
+
+    // Load idea
+    async function loadIdea() {
+      const res = await fetch(`http://backend:8000/ideas/${ideaId}`, {
+        headers: { "Authorization": "Bearer " + token }
+      });
+      if (!res.ok) {
+        alert("Failed to load idea");
+        return;
+      }
+      ideaData = await res.json();
+      renderIdea(ideaData);
+    }
+
+    // Render idea (view or edit)
+    function renderIdea(data, editable = false) {
+      if (!editable) {
+        detailsDiv.innerHTML = `
+          <p><b>Title:</b> ${data.title}</p>
+          <p><b>Category:</b> ${data.category}</p>
+          <p><b>Status:</b> ${data.status}</p>
+          <p><b>Completion:</b> ${data.completion_percentage}%</p>
+          <p><b>Members:</b> ${data.members}</p>
+          <p><b>Description:</b> ${data.description}</p>
+        `;
+      } else {
+        detailsDiv.innerHTML = `
+          <label>Title:</label>
+          <input id="edit-title" value="${data.title}"><br>
+          <label>Category:</label>
+          <input id="edit-category" value="${data.category}"><br>
+          <label>Status:</label>
+          <input id="edit-status" value="${data.status}"><br>
+          <label>Completion %:</label>
+          <input id="edit-completion" type="number" value="${data.completion_percentage}"><br>
+          <label>Members:</label>
+          <input id="edit-members" value="${data.members}"><br>
+          <label>Description:</label>
+          <textarea id="edit-description">${data.description}</textarea>
+        `;
+      }
+    }
+
+    // Edit
+    document.getElementById("edit-btn").addEventListener("click", () => {
+      renderIdea(ideaData, true);
+      document.getElementById("edit-btn").style.display = "none";
+      document.getElementById("save-btn").style.display = "inline-block";
+    });
+
+    // Save
+    document.getElementById("save-btn").addEventListener("click", async () => {
+      const updated = {
+        title: document.getElementById("edit-title").value,
+        category: document.getElementById("edit-category").value,
+        status: document.getElementById("edit-status").value,
+        completion_percentage: parseInt(document.getElementById("edit-completion").value),
+        members: document.getElementById("edit-members").value,
+        description: document.getElementById("edit-description").value
+      };
+
+      const res = await fetch(`http://backend:8000/ideas/${ideaId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(updated)
+      });
+
+      if (res.ok) {
+        alert("Idea updated!");
+        ideaData = await res.json();
+        renderIdea(ideaData, false);
+        document.getElementById("edit-btn").style.display = "inline-block";
+        document.getElementById("save-btn").style.display = "none";
+      } else {
+        alert("Failed to update idea");
+      }
+    });
+
+    // Delete
+    document.getElementById("delete-btn").addEventListener("click", async () => {
+      if (confirm("Are you sure you want to delete this idea? This cannot be undone.")) {
+        const res = await fetch(`http://backend:8000/ideas/${ideaId}`, {
+          method: "DELETE",
+          headers: { "Authorization": "Bearer " + token }
+        });
+        if (res.ok) {
+          alert("Idea deleted successfully!");
+          window.location.href = "dashboard.html";
+        } else {
+          alert("Failed to delete idea");
+        }
+      }
+    });
+
+    // Logout
+    document.getElementById("logout-btn").addEventListener("click", () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("username");
+      window.location.href = "index.html";
+    });
+
+    loadIdea();
+  </script>
+</body>
+</html>

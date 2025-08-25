@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Idea Dashboard</title>
+  <link rel="stylesheet" href="theme.css">
+</head>
+<body>
+    <!-- Header with Navbar -->
+    <div class="header">
+      <h1><a href="index.html">Idea Manager</a></h1>
+      <nav class="navbar">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="dashboard.html">Dashboard</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html">Contact</a></li>
+          <li>
+            <div class="user-info">
+              <span id="logged-user"></span>
+              <button id="logout-btn">Logout</button>
+            </div>
+          </li>
+        </ul>
+      </nav>
+      
+    </div>
+
+
+    <!-- Add Idea Section -->
+    <div id="add-idea-section" class="form-container" style="display: none;">
+      <h2>Add New Idea</h2>
+      <form id="idea-form">
+        <input type="text" id="short_desc" placeholder="Short Description" required>
+        <input type="text" id="category" placeholder="Category" required>
+        <input type="text" id="members" placeholder="Members (comma separated)" required>
+        <textarea id="description" placeholder="Description" required></textarea>
+        <input type="text" id="status" placeholder="Status" required>
+        <input type="number" id="completion" placeholder="Completion %" min="0" max="100" required>
+        <button type="submit">Submit Idea</button>
+      </form>
+    </div>
+
+    <!-- All Ideas Section -->
+    <div class="ideas-container">
+      <h2>All Ideas</h2>
+      <div id="ideas-list" class="ideas-list"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Idea Manager v1.0.0</p>
+    </div>
+
+    <script>
+      // Check login
+      const user = localStorage.getItem("username");
+      const token = localStorage.getItem("token");
+      if (user && token) {
+          document.getElementById("logged-user").textContent = "👤 " + user;
+          document.getElementById("logout-btn").style.display = "inline-block";
+          document.getElementById("add-idea-section").style.display = "block";
+      } else {
+          document.getElementById("logged-user").textContent = "";
+          alert("You must log in first!");
+          window.location.href = "index.html"; // redirect to login
+      }
+
+      // Handle form submit
+      document.getElementById("idea-form").addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const data = {
+              title: document.getElementById("short_desc").value,
+              category: document.getElementById("category").value,
+              members: document.getElementById("members").value,
+              description: document.getElementById("description").value,
+              status: document.getElementById("status").value,
+              completion_percentage: parseInt(document.getElementById("completion").value)
+          };
+
+          const response = await fetch("http://127.0.0.1:8000/ideas", {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer " + token
+              },
+              body: JSON.stringify(data)
+          });
+
+          if (response.ok) {
+              alert("Idea added successfully!");
+              window.location.reload();
+          } else {
+              alert("Failed to add idea");
+          }
+      });
+
+      // Fetch existing ideas
+      async function loadIdeas() {
+        const res = await fetch("http://127.0.0.1:8000/ideas", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            }
+        });
+
+        if (res.status === 401) {
+            alert("Session expired. Please log in again.");
+            localStorage.removeItem("token");
+            window.location.href = "login.html";
+            return;
+        }
+          const ideas = await res.json();
+          const listDiv = document.getElementById("ideas-list");
+          listDiv.innerHTML = "";
+          ideas.forEach(i => {
+              const card = document.createElement("div");
+              card.classList.add("idea-card");
+              card.innerHTML = `
+                <h3>${i.title}</h3>
+                <p><b>Category:</b> ${i.category}</p>
+                <p><b>Status:</b> ${i.status}</p>
+                <p><b>Completion:</b> ${i.completion_percentage}%</p>
+                <p><b>Members:</b> ${i.members}</p>
+              `;
+              listDiv.appendChild(card);
+          });
+      }
+      loadIdeas();
+
+      document.getElementById("logout-btn").addEventListener("click", () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        window.location.href = "index.html"; // back to login
+      });
+    </script>
+</body>
+</html>

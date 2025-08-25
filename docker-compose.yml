@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  backend:
+    image: octopent/idea-manager-backend
+    container_name: idea-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=Welcome01
+      - DB_NAME=idea_manager
+    depends_on:
+      - db
+
+  frontend:
+    image: octopent/idea-manager-frontend
+    container_name: idea-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  db:
+    image: mysql:latest
+    container_name: idea-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Welcome01
+      MYSQL_DATABASE: idea_manager
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+volumes:
+  db_data:
