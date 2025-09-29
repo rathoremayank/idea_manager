@@ -1,6 +1,7 @@
 async function loadIdeas() {
+  const API_BASE = "/api";
   let token = localStorage.getItem("token");
-  let res = await fetch("http://backend:8000/ideas", {
+  let res = await fetch(`${API_BASE}/ideas`, {
     headers: {"Authorization": "Bearer " + token}
   });
   let data = await res.json();

@@ -1,7 +1,8 @@
 async function login() {
+  const API_BASE = "/api";
   let username = document.getElementById("username").value;
   let password = document.getElementById("password").value;
-  let res = await fetch("http://backend:8000/login", {
+  let res = await fetch(`${API_BASE}/login`, {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({username, password})

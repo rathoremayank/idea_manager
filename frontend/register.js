@@ -1,7 +1,8 @@
 async function register() {
+  const API_BASE = "/api";
   let username = document.getElementById("username").value;
   let password = document.getElementById("password").value;
-  let res = await fetch("http://backend:8000/register", {
+  let res = await fetch(`${API_BASE}/register`, {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({username, password})
